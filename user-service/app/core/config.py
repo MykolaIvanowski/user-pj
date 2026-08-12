@@ -1,3 +1,11 @@
-DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/user_service"
-JWT_SECRET = "supersecret"
-JWT_ALGORITHM = "HS256"
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    DB_URL: str
+    JWT_SECRET: str
+    JWT_EXPIRE: int = 3600
+
+    class Config:
+        env_file = ".env"
+
+settings = Settings()

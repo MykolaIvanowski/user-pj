@@ -1,8 +1,10 @@
 from fastapi import FastAPI
-from routers.users import router
-from database import init_db
+from app.api.v1.routers import auth
+from app.db.database import init_db
 
-app = FastAPI(title="User service")
+app = FastAPI(title="User Service")
+
+app.include_router(auth.router)
 
 @app.on_event("startup")
 def on_startup():
@@ -12,4 +14,4 @@ def on_startup():
 def health():
     return {"status": "ok"}
 
-app.include_router(router)
+app.include_router(auth.router)

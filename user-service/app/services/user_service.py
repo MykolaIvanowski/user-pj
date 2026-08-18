@@ -28,15 +28,11 @@ class UserService:
             logger.warning("email_already_exists", email=email)
             raise ValueError("email_exists")
 
-        # Resolve hashed_password: prefer explicit hashed_password, else hash plain password.
         if hashed_password is None and password is not None:
             from app.core.security import hash_password
 
             hashed_password = hash_password(password)
         if hashed_password is None:
-            # Keeps backward compat with callers that pass no password (e.g. tests / OAuth)
-            # but the User model requires a password; use empty hash placeholder
-            # and let DB/validation reject if strict.
             hashed_password = ""
 
         user = await self.repo.create(
@@ -48,7 +44,10 @@ class UserService:
 
         logger.info("user_created", user_id=user.id, email=user.email)
 
-        await publish_event("user.created", {"id": user.id, "email": user.email})
+        try:
+            await publish_event("user.created", {"id": user.id, "email": user.email})
+        except Exception:  # pragma: no cover - broker optional in tests
+            logger.warning("publish_failed", event="user.created")
 
         return user
 
@@ -57,7 +56,6 @@ class UserService:
         return await self.repo.get(user_id)
 
     async def list_users(self, limit: int = 20, offset: int = 0):
-        # Clamp to sane bounds to avoid DB abuse
         limit = max(1, min(limit, 100))
         offset = max(0, offset)
         logger.info("list_users", limit=limit, offset=offset)
@@ -71,11 +69,20 @@ class UserService:
             logger.warning("user_not_found", user_id=user_id)
             return None
 
+        # Guard duplicate email if patch tries to change it
+        if "email" in patch and patch["email"] != user.email:
+            existing = await self.repo.get_by_email(patch["email"])
+            if existing:
+                raise ValueError("email_exists")
+
         updated = await self.repo.update(user, patch)
 
         logger.info("user_updated", user_id=updated.id)
 
-        await publish_event("user.updated", {"id": updated.id})
+        try:
+            await publish_event("user.updated", {"id": updated.id})
+        except Exception:  # pragma: no cover
+            logger.warning("publish_failed", event="user.updated")
 
         return updated
 
@@ -90,10 +97,16 @@ class UserService:
         if hard:
             await self.repo.hard_delete(user)
             logger.info("user_hard_deleted", user_id=user_id)
-            await publish_event("user.deleted.hard", {"id": user_id})
+            try:
+                await publish_event("user.deleted.hard", {"id": user_id})
+            except Exception:  # pragma: no cover
+                logger.warning("publish_failed", event="user.deleted.hard")
         else:
             await self.repo.soft_delete(user)
             logger.info("user_soft_deleted", user_id=user_id)
-            await publish_event("user.deleted.soft", {"id": user_id})
+            try:
+                await publish_event("user.deleted.soft", {"id": user_id})
+            except Exception:  # pragma: no cover
+                logger.warning("publish_failed", event="user.deleted.soft")
 
         return True

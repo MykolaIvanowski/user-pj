@@ -37,10 +37,3 @@ def create_access_token(
 def decode_access_token(token: str) -> dict[str, Any]:
     settings = get_settings()
     return jwt.decode(token, settings.JWT_SECRET.get_secret_value(), algorithms=["HS256"])
-
-
-# Backwards-compat: old location was app.core.security.UserRepository
-try:
-    from app.repositories.user import UserRepository  # noqa: F401
-except ImportError:  # pragma: no cover
-    pass

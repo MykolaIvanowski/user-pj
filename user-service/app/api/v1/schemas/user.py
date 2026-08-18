@@ -8,15 +8,23 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class UserCreate(BaseModel):
     email: EmailStr
     full_name: str | None = Field(default=None, max_length=120)
-    password: str | None = Field(default=None, min_length=8, max_length=128, description="Plain password; hashed server-side")
-    # `metadata` shadows Model.metadata — use alias `user_metadata` internally
-    user_metadata: dict[str, Any] | None = Field(default=None, alias="metadata", validation_alias="metadata", serialization_alias="metadata")
+    password: str | None = Field(
+        default=None, min_length=8, max_length=128, description="Plain password; hashed server-side"
+    )
+    user_metadata: dict[str, Any] | None = Field(
+        default=None, alias="metadata", validation_alias="metadata", serialization_alias="metadata"
+    )
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
 
 class UserUpdate(BaseModel):
+    email: EmailStr | None = Field(default=None)
     full_name: str | None = Field(default=None, max_length=120)
     avatar_url: str | None = Field(default=None, max_length=2048)
-    user_metadata: dict[str, Any] | None = Field(default=None, alias="metadata", validation_alias="metadata", serialization_alias="metadata")
+    user_metadata: dict[str, Any] | None = Field(
+        default=None, alias="metadata", validation_alias="metadata", serialization_alias="metadata"
+    )
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
@@ -28,4 +36,6 @@ class UserOut(BaseModel):
     email: EmailStr
     full_name: str | None = None
     avatar_url: str | None = None
-    user_metadata: dict[str, Any] | None = Field(default=None, alias="metadata", validation_alias="metadata", serialization_alias="metadata")
+    user_metadata: dict[str, Any] | None = Field(
+        default=None, alias="metadata", validation_alias="metadata", serialization_alias="metadata"
+    )

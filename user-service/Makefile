@@ -1,23 +1,23 @@
 .PHONY: install lint test run format typecheck
 
 install:
-    pip install -e .[dev]
+	pip install -e .[dev]
 
 lint:
-    ruff check .
-    black --check .
-    isort --check-only .
+	ruff check .
+	black --check .
+	isort --check-only .
 
 format:
-    black .
-    isort .
-    ruff check --fix .
+	black .
+	isort .
+	ruff check --fix .
 
 typecheck:
-    mypy app
+	mypy app
 
 test:
-    pytest -q
+	pytest -q
 
 run:
-    uvicorn app.main:app --host 0.0.0.0 --port 8000
+	uvicorn app.main:app --host 0.0.0.0 --port 8000
